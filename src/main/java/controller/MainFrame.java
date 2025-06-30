@@ -5,6 +5,8 @@ import javax.swing.*;
 import view.AsymmetricalGenkeyPanel;
 import view.SymmetricalGenkeyPanel;
 import view.SymmetricalEncryptPanel;
+import view.DigitalSignatureSignPanel;
+import view.DigitalSignatureVerifyPanel;
 
 import java.awt.*;
 
@@ -12,6 +14,8 @@ public class MainFrame extends JFrame {
 
     private AsymmetricalGenkeyPanel asymmetricalGenkeyPanel;
     private SymmetricalGenkeyPanel symmetricalGenkeyPanel;
+    private DigitalSignatureSignPanel digitalSignatureSignPanel;
+    private DigitalSignatureVerifyPanel digitalSignatureVerifyPanel;
     private JPanel centerPanel;
     private JComboBox<String> encryptionTypeCombo;
     private JComboBox<String> algorithmCombo;
@@ -53,7 +57,6 @@ public class MainFrame extends JFrame {
 
         algorithmPanel.add(new JLabel("Key size (bits):"));
         keySizeCombo = new JComboBox<>(new String[] { "1024", "2048", "4096" });
-        keySizeCombo.setSelectedIndex(1);
         keySizeCombo.setPreferredSize(new Dimension(80, 24));
         keySizeCombo.setEnabled(false);
         algorithmPanel.add(keySizeCombo);
@@ -71,6 +74,8 @@ public class MainFrame extends JFrame {
 
         asymmetricalGenkeyPanel = new AsymmetricalGenkeyPanel(false);
         symmetricalGenkeyPanel = new SymmetricalGenkeyPanel();
+        digitalSignatureSignPanel = new DigitalSignatureSignPanel();
+        digitalSignatureVerifyPanel = new DigitalSignatureVerifyPanel();
 
         JPanel emptyPanel = new JPanel();
         emptyPanel.add(new JLabel("Please select an encryption type to begin."));
@@ -95,16 +100,7 @@ public class MainFrame extends JFrame {
         keySizeCombo.removeAllItems();
         paddingCombo.removeAllItems();
 
-        if ("(none)".equals(selectedType)) {
-            JPanel emptyPanel = new JPanel();
-            emptyPanel.add(new JLabel("Please select an encryption type to begin."));
-            centerPanel.add(emptyPanel, BorderLayout.CENTER);
-
-            algorithmCombo.setEnabled(false);
-            modeCombo.setEnabled(false);
-            keySizeCombo.setEnabled(false);
-            paddingCombo.setEnabled(false);
-        } else if ("Symmetrical".equals(selectedType)) {
+        if ("Symmetrical".equals(selectedType)) {
             algorithmCombo.setEnabled(true);
             modeCombo.setEnabled(true);
             keySizeCombo.setEnabled(true);
@@ -139,6 +135,7 @@ public class MainFrame extends JFrame {
 
             modeCombo.addItem("Sign");
             modeCombo.addItem("Verify");
+            modeCombo.setSelectedItem("Sign");
 
             keySizeCombo.addItem("1024");
             keySizeCombo.addItem("2048");
@@ -147,9 +144,7 @@ public class MainFrame extends JFrame {
             paddingCombo.addItem("PKCS1Padding");
             paddingCombo.addItem("PSS");
 
-            JPanel digitalSignaturePanel = new JPanel();
-            digitalSignaturePanel.add(new JLabel("Digital Signature functionality - Coming Soon"));
-            centerPanel.add(digitalSignaturePanel, BorderLayout.CENTER);
+            centerPanel.add(digitalSignatureSignPanel, BorderLayout.CENTER);
 
         } else if ("Classical".equals(selectedType)) {
 
@@ -230,6 +225,17 @@ public class MainFrame extends JFrame {
                     }
                 }
             }
+        } else if ("Digital Signature".equals(selectedType)) {
+            centerPanel.removeAll();
+            
+            if ("Sign".equals(selectedMode)) {
+                centerPanel.add(digitalSignatureSignPanel, BorderLayout.CENTER);
+            } else if ("Verify".equals(selectedMode)) {
+                centerPanel.add(digitalSignatureVerifyPanel, BorderLayout.CENTER);
+            }
+            
+            centerPanel.revalidate();
+            centerPanel.repaint();
         }
     }
 

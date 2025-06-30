@@ -8,6 +8,7 @@ import javax.swing.border.EmptyBorder;
 import java.io.File;
 import java.security.KeyPair;
 import model.RSAUtil;
+import controller.MainFrame;
 
 public class AsymmetricalGenkeyPanel extends JPanel {
 
@@ -180,10 +181,23 @@ public class AsymmetricalGenkeyPanel extends JPanel {
 
     private void generateKeys() {
         try {
-            int keySize = 2048;
+            int keySize = 2048; 
             if (keySizeCombo != null) {
                 String keySizeStr = (String) keySizeCombo.getSelectedItem();
                 keySize = Integer.parseInt(keySizeStr);
+            } else {
+                // Get key size from MainFrame when combo box is not available
+                Container parent = this.getParent();
+                while (parent != null && !(parent instanceof MainFrame)) {
+                    parent = parent.getParent();
+                }
+                if (parent instanceof MainFrame) {
+                    MainFrame mainFrame = (MainFrame) parent;
+                    String keySizeStr = mainFrame.getSelectedKeySize();
+                    if (keySizeStr != null && !keySizeStr.isEmpty()) {
+                        keySize = Integer.parseInt(keySizeStr);
+                    }
+                }
             }
             
             KeyPair keyPair = RSAUtil.genKey(keySize);

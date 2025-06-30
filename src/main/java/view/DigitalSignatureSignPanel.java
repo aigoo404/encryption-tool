@@ -249,14 +249,24 @@ public class DigitalSignatureSignPanel extends JPanel {
         }
 
         try {
+            String originalPath = selectedFile.getAbsolutePath();
+            String signedFilePath;
+            
+            int lastDotIndex = originalPath.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                signedFilePath = originalPath.substring(0, lastDotIndex) + ".signed" + originalPath.substring(lastDotIndex);
+            } else {
+                signedFilePath = originalPath + ".signed";
+            }
+            
             byte[] originalContent = java.nio.file.Files.readAllBytes(selectedFile.toPath());
             String embeddedContent = new String(originalContent) + "\n\n--- DIGITAL SIGNATURE ---\n" + signature
                     + "\n--- END SIGNATURE ---";
-
-            java.nio.file.Files.write(selectedFile.toPath(), embeddedContent.getBytes());
-
+    
+            java.nio.file.Files.write(java.nio.file.Paths.get(signedFilePath), embeddedContent.getBytes());
+    
             JOptionPane.showMessageDialog(this,
-                    "Signature embedded successfully into: " + selectedFile.getAbsolutePath(), "Success",
+                    "Signature embedded successfully into new file: " + signedFilePath + "\n\nOriginal file remains unchanged for verification.", "Success",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Failed to embed signature: " + e.getMessage(), "Error",

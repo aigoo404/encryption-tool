@@ -2,14 +2,11 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
 import model.AESUtil;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SymmetricalGenkeyPanel extends JPanel {
 

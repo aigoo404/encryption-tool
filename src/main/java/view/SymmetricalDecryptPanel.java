@@ -8,7 +8,6 @@ import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
 import model.AESUtil;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SymmetricalDecryptPanel extends JPanel {
 

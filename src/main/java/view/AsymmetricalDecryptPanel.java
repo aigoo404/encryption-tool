@@ -210,7 +210,7 @@ public class AsymmetricalDecryptPanel extends JPanel {
                 
                 int result = JOptionPane.showConfirmDialog(this, 
                     "The original file will be overwritten.\nDo you want to continue?", 
-                    "Confirm In-Place Decryption", 
+                    "Confirm Decryption", 
                     JOptionPane.YES_NO_OPTION, 
                     JOptionPane.WARNING_MESSAGE);
                 

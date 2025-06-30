@@ -121,6 +121,7 @@ public class MainFrame extends JFrame {
             modeCombo.addItem("CFB");
             modeCombo.addItem("OFB");
             modeCombo.addItem("CTR");
+            modeCombo.setSelectedItem("CBC");
 
             paddingCombo.addItem("NoPadding");
             paddingCombo.addItem("PKCS5");
@@ -232,6 +233,27 @@ public class MainFrame extends JFrame {
                 }
             }
         }
+    }
+
+    public String getSelectedAlgorithm() {
+        return (String) algorithmCombo.getSelectedItem();
+    }
+    
+    public String getSelectedMode() {
+        return (String) modeCombo.getSelectedItem();
+    }
+    
+    public String getSelectedPadding() {
+        String padding = (String) paddingCombo.getSelectedItem();
+
+        if ("PKCS5".equals(padding)) {
+            return "PKCS5Padding";
+        }
+        return padding;
+    }
+    
+    public String getSelectedKeySize() {
+        return (String) keySizeCombo.getSelectedItem();
     }
 
     public static void main(String[] args) {

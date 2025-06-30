@@ -6,6 +6,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
+import java.security.PrivateKey;
+import model.RSAUtil;
 
 public class AsymmetricalDecryptPanel extends JPanel {
 
@@ -17,6 +19,8 @@ public class AsymmetricalDecryptPanel extends JPanel {
     private JTextArea privateKeyField;
     private JButton loadPrivateKeyButton;
     private JButton decryptButton;
+    
+    private File selectedFile;
 
     private static final String TEXT_PLACEHOLDER = "Your encrypted text here...";
     private static final String PRIVATE_KEY_PLACEHOLDER = "Your private key here...";
@@ -162,10 +166,12 @@ public class AsymmetricalDecryptPanel extends JPanel {
 
     private void chooseFile() {
         JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Encrypted File to Decrypt");
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+            selectedFile = fileChooser.getSelectedFile();
+            chooseFileButton.setText(selectedFile.getName());
+            JOptionPane.showMessageDialog(this, "File selected: " + selectedFile.getName(), "File Selected", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -174,32 +180,57 @@ public class AsymmetricalDecryptPanel extends JPanel {
         fileChooser.setDialogTitle("Load Private Key");
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Loading private key from: " + selectedFile.getAbsolutePath());
+            File selectedKeyFile = fileChooser.getSelectedFile();
+            try {
+                PrivateKey privateKey = RSAUtil.loadPrivateKeyFromFile(selectedKeyFile.getAbsolutePath());
+                String privateKeyBase64 = RSAUtil.keyToBase64(privateKey);
+                privateKeyField.setText(privateKeyBase64);
+                privateKeyField.setForeground(Color.BLACK);
+                JOptionPane.showMessageDialog(this, "Private key loaded successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error loading private key: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         }
     }
 
     private void decrypt() {
-        String decryptedResult = "";
-
-        if (decryptFileRadio.isSelected()) {
-            System.out.println("Decrypting file...");
-            decryptedResult = "File decryption result would appear here...";
-        } else {
-            String text = textInputArea.getText();
-            if (!text.equals(TEXT_PLACEHOLDER)) {
-                System.out.println("Decrypting text: " + text);
-                decryptedResult = "Decrypted text result: " + text + " (decrypted)";
+        try {
+            String privateKeyText = privateKeyField.getText().trim();
+            if (privateKeyText.isEmpty() || privateKeyText.equals(PRIVATE_KEY_PLACEHOLDER)) {
+                JOptionPane.showMessageDialog(this, "Please load or enter a private key first.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-        }
 
-        String privateKey = privateKeyField.getText();
-        if (!privateKey.equals(PRIVATE_KEY_PLACEHOLDER)) {
-            System.out.println("Using private key: " + privateKey);
-        }
-
-        if (!decryptedResult.isEmpty()) {
-            outputField.setText("----------------\ndecrypted result:\n" + decryptedResult);
+            if (decryptFileRadio.isSelected()) {
+                if (selectedFile == null) {
+                    JOptionPane.showMessageDialog(this, "Please select a file to decrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                int result = JOptionPane.showConfirmDialog(this, 
+                    "The original file will be overwritten.\nDo you want to continue?", 
+                    "Confirm In-Place Decryption", 
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.WARNING_MESSAGE);
+                
+                if (result == JOptionPane.YES_OPTION) {
+                    RSAUtil.decryptFileInPlace(selectedFile.getAbsolutePath(), privateKeyText);
+                    outputField.setText("File decrypted successfully in place: " + selectedFile.getAbsolutePath());
+                }
+            } else if (decryptTextRadio.isSelected()) {
+                String inputText = textInputArea.getText().trim();
+                if (inputText.isEmpty() || inputText.equals(TEXT_PLACEHOLDER)) {
+                    JOptionPane.showMessageDialog(this, "Please enter text to decrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                String decryptedText = RSAUtil.decrypt(inputText, privateKeyText);
+                outputField.setText(decryptedText);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Decryption failed: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            outputField.setText("Decryption failed: " + e.getMessage());
         }
     }
 }

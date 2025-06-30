@@ -8,6 +8,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
+import model.AESUtil;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SymmetricalGenkeyPanel extends JPanel {
 
@@ -160,7 +162,7 @@ public class SymmetricalGenkeyPanel extends JPanel {
     }
 
     public void updateIVPanel(String mode) {
-        boolean requiresIV = mode != null && !"ECB".equals(mode) && !"none".equals(mode) && !"".equals(mode);
+        boolean requiresIV = mode != null && !"ECB".equals(mode) && !"CTR".equals(mode) && !"none".equals(mode) && !"".equals(mode);
 
         if (requiresIV) {
             ivArea.setEnabled(true);
@@ -222,16 +224,23 @@ public class SymmetricalGenkeyPanel extends JPanel {
     }
 
     private void generateKey() {
+        try {
+            int keySize = 256;
+            String generatedKey = AESUtil.genKey(keySize);
 
-        System.out.println("Generating secret key...");
+            secretKeyArea.setForeground(Color.BLACK);
+            secretKeyArea.setText(generatedKey);
 
-        secretKeyArea.setForeground(Color.BLACK);
-        secretKeyArea.setText(
-                "-----BEGIN SECRET KEY-----\nMTI2NDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODk0OTAxMjM0NTY3ODkwMTIzNDU2Nzg5\nwMTI=\n-----END SECRET KEY-----");
+            System.out.println("Secret key generated successfully.");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error generating key: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 
     private void saveSecretKey() {
-        if (secretKeyArea.getText().equals(SECRET_KEY_PLACEHOLDER)) {
+        if (secretKeyArea.getText().equals(SECRET_KEY_PLACEHOLDER) || secretKeyArea.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "No secret key to save. Please generate or enter a key first.",
                     "Warning", JOptionPane.WARNING_MESSAGE);
             return;
@@ -239,22 +248,46 @@ public class SymmetricalGenkeyPanel extends JPanel {
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save Secret Key");
+      
         int result = fileChooser.showSaveDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Saving secret key to: " + selectedFile.getAbsolutePath());
+
+            if (!selectedFile.getName().toLowerCase().endsWith(".pem")) {
+                selectedFile = new File(selectedFile.getAbsolutePath() + ".pem");
+            }
+
+            try {
+                AESUtil.saveKey(secretKeyArea.getText(), selectedFile.getAbsolutePath());
+                JOptionPane.showMessageDialog(this,
+                        "Secret key saved successfully to: " + selectedFile.getAbsolutePath(),
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error saving key: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
         }
     }
 
     private void generateIV() {
-        System.out.println("Generating IV...");
+        try {
+            String mode = "CBC";
+            String generatedIV = AESUtil.genIV(mode);
 
-        ivArea.setForeground(Color.BLACK);
-        ivArea.setText("-----BEGIN IV-----\nbG9uZ2VyIGl2IGZvciBkZW1vbnN0cmF0aW9uPQ==\n-----END IV-----");
+            ivArea.setForeground(Color.BLACK);
+            ivArea.setText(generatedIV);
+
+            System.out.println("IV generated successfully.");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error generating IV: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 
     private void saveIV() {
-        if (ivArea.getText().equals(IV_PLACEHOLDER)) {
+        if (ivArea.getText().equals(IV_PLACEHOLDER) || ivArea.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "No IV to save. Please generate or enter an IV first.", "Warning",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -262,10 +295,24 @@ public class SymmetricalGenkeyPanel extends JPanel {
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save IV");
+        
         int result = fileChooser.showSaveDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Saving IV to: " + selectedFile.getAbsolutePath());
+
+            if (!selectedFile.getName().toLowerCase().endsWith(".txt")) {
+                selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
+            }
+
+            try {
+                AESUtil.saveIV(ivArea.getText(), selectedFile.getAbsolutePath());
+                JOptionPane.showMessageDialog(this, "IV saved successfully to: " + selectedFile.getAbsolutePath(),
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error saving IV: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
         }
     }
 }

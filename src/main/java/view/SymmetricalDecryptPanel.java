@@ -1,11 +1,14 @@
 package view;
 
+import controller.MainFrame;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
+import model.AESUtil;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SymmetricalDecryptPanel extends JPanel {
 
@@ -142,7 +145,8 @@ public class SymmetricalDecryptPanel extends JPanel {
     }
 
     public void updateIVPanel(String mode) {
-        boolean requiresIV = mode != null && !"ECB".equals(mode) && !"none".equals(mode) && !"".equals(mode);
+        boolean requiresIV = mode != null && !"ECB".equals(mode) && !"CTR".equals(mode) && !"none".equals(mode)
+                && !"".equals(mode);
 
         if (requiresIV) {
             ivField.setEnabled(true);
@@ -209,41 +213,114 @@ public class SymmetricalDecryptPanel extends JPanel {
 
     private void loadIV() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Load Initialization Vector");
+        fileChooser.setDialogTitle("Load IV File");
+
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Loading IV from: " + selectedFile.getAbsolutePath());
+            try {
+                String loadedIV = AESUtil.loadIV(selectedFile.getAbsolutePath());
+                ivField.setText(loadedIV);
+                ivField.setForeground(Color.BLACK);
+                System.out.println("IV loaded successfully from: " + selectedFile.getAbsolutePath());
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error loading IV: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
         }
     }
 
     private void loadSecretKey() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Load Secret Key");
+        fileChooser.setDialogTitle("Load Secret Key File");
+
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Loading secret key from: " + selectedFile.getAbsolutePath());
+            try {
+                String loadedKey = AESUtil.loadKey(selectedFile.getAbsolutePath());
+                secretKeyField.setText(loadedKey);
+                secretKeyField.setForeground(Color.BLACK);
+                System.out.println("Secret key loaded successfully from: " + selectedFile.getAbsolutePath());
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error loading secret key: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
         }
     }
 
     private void decrypt() {
-        if (decryptFileRadio.isSelected()) {
-            System.out.println("Decrypting file...");
-        } else {
-            String text = textInputArea.getText();
-            if (!text.equals(TEXT_PLACEHOLDER)) {
-                System.out.println("Decrypting text: " + text);
-            }
-        }
+        try {
+            MainFrame mainFrame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            String algorithm = mainFrame.getSelectedAlgorithm();
+            String mode = mainFrame.getSelectedMode();
+            String padding = mainFrame.getSelectedPadding();
 
-        String iv = ivField.getText();
-        String secretKey = secretKeyField.getText();
-        if (!iv.equals(IV_PLACEHOLDER) && ivField.isEnabled()) {
-            System.out.println("Using IV: " + iv);
-        }
-        if (!secretKey.equals(SECRET_KEY_PLACEHOLDER)) {
-            System.out.println("Using secret key: " + secretKey);
+            String secretKey = secretKeyField.getText();
+            String iv = ivField.getText();
+
+            if (secretKey.equals(SECRET_KEY_PLACEHOLDER) || secretKey.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter or load a secret key.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            boolean requiresIV = !"ECB".equals(mode) && !"CTR".equals(mode) && !"none".equals(mode) && !mode.isEmpty();
+            if (requiresIV && (iv.equals(IV_PLACEHOLDER) || iv.trim().isEmpty())) {
+                JOptionPane.showMessageDialog(this, "This mode requires an IV. Please enter or load an IV.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (decryptFileRadio.isSelected()) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Select File to Decrypt");
+
+                int result = fileChooser.showOpenDialog(this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+
+                    int confirm = JOptionPane.showConfirmDialog(this,
+                            "The original content will be overwritten.\nAre you sure?",
+                            "Confirm Decryption",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.WARNING_MESSAGE);
+
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        AESUtil.decryptFileInPlace(selectedFile.getAbsolutePath(),
+                                secretKey, algorithm, mode, padding, requiresIV ? iv : null);
+
+                        JOptionPane.showMessageDialog(this,
+                                "File decrypted successfully in-place: " + selectedFile.getAbsolutePath(),
+                                "Success", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                }
+            } else {
+                String text = textInputArea.getText();
+                if (text.equals(TEXT_PLACEHOLDER) || text.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Please enter encrypted text to decrypt.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                String decryptedText = AESUtil.decrypt(text, secretKey, algorithm, mode, padding,
+                        requiresIV ? iv : null);
+
+                JTextArea resultArea = new JTextArea(10, 50);
+                resultArea.setText("Decrypted Text:\n" + decryptedText);
+                resultArea.setEditable(false);
+                resultArea.setLineWrap(true);
+                resultArea.setWrapStyleWord(true);
+
+                JScrollPane scrollPane = new JScrollPane(resultArea);
+                JOptionPane.showMessageDialog(this, scrollPane, "Decryption Result", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error during decryption: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 }

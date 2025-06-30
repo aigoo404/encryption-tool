@@ -6,6 +6,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
+import java.security.KeyPair;
+import model.RSAUtil;
 
 public class AsymmetricalGenkeyPanel extends JPanel {
 
@@ -89,6 +91,7 @@ public class AsymmetricalGenkeyPanel extends JPanel {
         JButton generateKeyButton = new JButton("Generate Key");
 
         generateKeyButton.setPreferredSize(new Dimension(generateKeyButton.getPreferredSize().width, 24));
+        generateKeyButton.addActionListener(e -> generateKeys());
         keyGenLabelPanel.add(generateKeyButton);
         keyGenLabelPanel.add(new JLabel(", or type in manually:"));
         keyGenPanel.add(keyGenLabelPanel, BorderLayout.NORTH);
@@ -175,11 +178,41 @@ public class AsymmetricalGenkeyPanel extends JPanel {
         return textArea;
     }
 
+    private void generateKeys() {
+        try {
+            int keySize = 2048;
+            if (keySizeCombo != null) {
+                String keySizeStr = (String) keySizeCombo.getSelectedItem();
+                keySize = Integer.parseInt(keySizeStr);
+            }
+            
+            KeyPair keyPair = RSAUtil.genKey(keySize);
+            
+            String publicKeyBase64 = RSAUtil.keyToBase64(keyPair.getPublic());
+            String privateKeyBase64 = RSAUtil.keyToBase64(keyPair.getPrivate());
+            
+            publicKeyArea.setText(publicKeyBase64);
+            publicKeyArea.setForeground(Color.BLACK);
+            
+            privateKeyArea.setText(privateKeyBase64);
+            privateKeyArea.setForeground(Color.BLACK);
+            
+            String message = "RSA key pair generated successfully!";
+            if (keySizeCombo == null) {
+                message += "\nUsed default key size: " + keySize + " bits";
+            }
+            JOptionPane.showMessageDialog(this, message, "Success", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error generating keys: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
     private void openSaveDialog(String keyType) {
         JTextArea keyArea = keyType.equals("public") ? publicKeyArea : privateKeyArea;
         String placeholder = keyType.equals("public") ? PUBLIC_KEY_PLACEHOLDER : PRIVATE_KEY_PLACEHOLDER;
 
-        if (keyArea.getText().equals(placeholder)) {
+        if (keyArea.getText().equals(placeholder) || keyArea.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "No " + keyType + " key to save. Please generate or enter a key first.",
                     "Warning", JOptionPane.WARNING_MESSAGE);
             return;
@@ -187,12 +220,23 @@ public class AsymmetricalGenkeyPanel extends JPanel {
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save " + keyType + " key");
+        fileChooser.setSelectedFile(new File(keyType + "_key.pem"));
 
         int userSelection = fileChooser.showSaveDialog(this);
 
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
-            System.out.println("Save " + keyType + " key to: " + fileToSave.getAbsolutePath());
+            try {
+                if (keyType.equals("public")) {
+                    RSAUtil.savePublicKeyToFile(RSAUtil.base64ToPublicKey(keyArea.getText()), fileToSave.getAbsolutePath());
+                } else {
+                    RSAUtil.savePrivateKeyToFile(RSAUtil.base64ToPrivateKey(keyArea.getText()), fileToSave.getAbsolutePath());
+                }
+                JOptionPane.showMessageDialog(this, keyType + " key saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error saving " + keyType + " key: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         }
     }
 }

@@ -42,12 +42,12 @@ public class AESUtil {
     public static String loadKey(String filePath) throws IOException {
         byte[] keyBytes = Files.readAllBytes(Paths.get(filePath));
         String content = new String(keyBytes, StandardCharsets.UTF_8).trim();
-  
+
         if (content.contains("-----BEGIN") && content.contains("-----END")) {
             String[] lines = content.split("\n");
             StringBuilder keyContent = new StringBuilder();
             boolean inKeySection = false;
-            
+
             for (String line : lines) {
                 line = line.trim();
                 if (line.startsWith("-----BEGIN")) {
@@ -221,12 +221,12 @@ public class AESUtil {
             writer.write("-----BEGIN AES KEY-----\n");
 
             String keyContent = key.replaceAll("\\s+", "");
-    
+
             for (int i = 0; i < keyContent.length(); i += 64) {
                 int endIndex = Math.min(i + 64, keyContent.length());
                 writer.write(keyContent.substring(i, endIndex) + "\n");
             }
-            
+
             writer.write("-----END AES KEY-----\n");
         }
     }
@@ -234,14 +234,14 @@ public class AESUtil {
     public static void saveKeyToFile(String key, String filePath) throws IOException {
         try (FileWriter writer = new FileWriter(filePath, StandardCharsets.UTF_8)) {
             writer.write("-----BEGIN AES KEY-----\n");
-   
+
             String keyContent = key.replaceAll("\\s+", "");
-   
+
             for (int i = 0; i < keyContent.length(); i += 64) {
                 int endIndex = Math.min(i + 64, keyContent.length());
                 writer.write(keyContent.substring(i, endIndex) + "\n");
             }
-            
+
             writer.write("-----END AES KEY-----\n");
         }
     }
@@ -257,14 +257,15 @@ public class AESUtil {
             writer.write(iv);
         }
     }
-    
-    public static void encryptFileInPlace(String filePath, String secretKey, String algorithm, String mode, String padding, String iv) throws Exception {
+
+    public static void encryptFileInPlace(String filePath, String secretKey, String algorithm, String mode,
+            String padding, String iv) throws Exception {
         byte[] fileContent = Files.readAllBytes(Paths.get(filePath));
-        
+
         SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(secretKey), algorithm);
         String transformation = algorithm + "/" + mode + "/" + padding;
         Cipher cipher = Cipher.getInstance(transformation);
-        
+
         if ("ECB".equals(mode)) {
             cipher.init(Cipher.ENCRYPT_MODE, keySpec);
         } else {
@@ -274,13 +275,14 @@ public class AESUtil {
         byte[] encryptedContent = cipher.doFinal(fileContent);
         Files.write(Paths.get(filePath), encryptedContent);
     }
-    
-    public static void decryptFileInPlace(String filePath, String secretKey, String algorithm, String mode, String padding, String iv) throws Exception {
+
+    public static void decryptFileInPlace(String filePath, String secretKey, String algorithm, String mode,
+            String padding, String iv) throws Exception {
         byte[] fileContent = Files.readAllBytes(Paths.get(filePath));
         SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(secretKey), algorithm);
         String transformation = algorithm + "/" + mode + "/" + padding;
         Cipher cipher = Cipher.getInstance(transformation);
-        
+
         if ("ECB".equals(mode)) {
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
         } else {

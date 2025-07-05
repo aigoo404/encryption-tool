@@ -19,7 +19,7 @@ public class AsymmetricalDecryptPanel extends JPanel {
     private JTextArea privateKeyField;
     private JButton loadPrivateKeyButton;
     private JButton decryptButton;
-    
+
     private File selectedFile;
 
     private static final String TEXT_PLACEHOLDER = "Your encrypted text here...";
@@ -171,7 +171,8 @@ public class AsymmetricalDecryptPanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             selectedFile = fileChooser.getSelectedFile();
             chooseFileButton.setText(selectedFile.getName());
-            JOptionPane.showMessageDialog(this, "File selected: " + selectedFile.getName(), "File Selected", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "File selected: " + selectedFile.getName(), "File Selected",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -186,9 +187,11 @@ public class AsymmetricalDecryptPanel extends JPanel {
                 String privateKeyBase64 = RSAUtil.keyToBase64(privateKey);
                 privateKeyField.setText(privateKeyBase64);
                 privateKeyField.setForeground(Color.BLACK);
-                JOptionPane.showMessageDialog(this, "Private key loaded successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Private key loaded successfully!", "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error loading private key: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error loading private key: " + ex.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
             }
         }
@@ -198,22 +201,24 @@ public class AsymmetricalDecryptPanel extends JPanel {
         try {
             String privateKeyText = privateKeyField.getText().trim();
             if (privateKeyText.isEmpty() || privateKeyText.equals(PRIVATE_KEY_PLACEHOLDER)) {
-                JOptionPane.showMessageDialog(this, "Please load or enter a private key first.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please load or enter a private key first.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             if (decryptFileRadio.isSelected()) {
                 if (selectedFile == null) {
-                    JOptionPane.showMessageDialog(this, "Please select a file to decrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Please select a file to decrypt.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
-                int result = JOptionPane.showConfirmDialog(this, 
-                    "The original file will be overwritten.\nDo you want to continue?", 
-                    "Confirm Decryption", 
-                    JOptionPane.YES_NO_OPTION, 
-                    JOptionPane.WARNING_MESSAGE);
-                
+
+                int result = JOptionPane.showConfirmDialog(this,
+                        "The original file will be overwritten.\nDo you want to continue?",
+                        "Confirm Decryption",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+
                 if (result == JOptionPane.YES_OPTION) {
                     RSAUtil.decryptFileInPlace(selectedFile.getAbsolutePath(), privateKeyText);
                     outputField.setText("File decrypted successfully in place: " + selectedFile.getAbsolutePath());
@@ -221,15 +226,17 @@ public class AsymmetricalDecryptPanel extends JPanel {
             } else if (decryptTextRadio.isSelected()) {
                 String inputText = textInputArea.getText().trim();
                 if (inputText.isEmpty() || inputText.equals(TEXT_PLACEHOLDER)) {
-                    JOptionPane.showMessageDialog(this, "Please enter text to decrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Please enter text to decrypt.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
+
                 String decryptedText = RSAUtil.decrypt(inputText, privateKeyText);
                 outputField.setText(decryptedText);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Decryption failed: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Decryption failed: " + e.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
             outputField.setText("Decryption failed: " + e.getMessage());
         }
     }

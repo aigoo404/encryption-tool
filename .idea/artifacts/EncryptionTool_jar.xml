@@ -1,16 +1,11 @@
 <component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="EncryptionTool:jar">
-    <output-path>$PROJECT_DIR$/..</output-path>
+  <artifact type="jar" name="EncryptionTool:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/EncryptionTool_jar</output-path>
     <root id="archive" name="EncryptionTool.jar">
       <element id="module-output" name="EncryptionTool" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-databind/2.19.0/jackson-databind-2.19.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-core/2.19.0/jackson-core-2.19.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-annotations/2.19.0/jackson-annotations-2.19.0.jar" path-in-jar="/" />
-      <element id="archive" name="EncryptionTool.jar">
-        <element id="directory" name="META-INF">
-          <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
-        </element>
-      </element>
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/fasterxml/jackson/core/jackson-databind/2.19.0/jackson-databind-2.19.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

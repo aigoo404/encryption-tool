@@ -56,7 +56,7 @@ public class MainFrame extends JFrame {
         algorithmPanel.add(modeCombo);
 
         algorithmPanel.add(new JLabel("Key size (bits):"));
-        keySizeCombo = new JComboBox<>(new String[] { "1024", "2048", "4096" });
+        keySizeCombo = new JComboBox<>(new String[] { "" });
         keySizeCombo.setPreferredSize(new Dimension(80, 24));
         keySizeCombo.setEnabled(false);
         algorithmPanel.add(keySizeCombo);
@@ -176,7 +176,6 @@ public class MainFrame extends JFrame {
             keySizeCombo.addItem("1024");
             keySizeCombo.addItem("2048");
             keySizeCombo.addItem("4096");
-            keySizeCombo.setSelectedItem("1024");
 
             paddingCombo.addItem("No padding");
             paddingCombo.addItem("PKCS1Padding");
@@ -190,6 +189,7 @@ public class MainFrame extends JFrame {
 
     private void updateAlgorithmOptions() {
         String selectedAlgorithm = (String) algorithmCombo.getSelectedItem();
+        String selectedType = (String) encryptionTypeCombo.getSelectedItem();
 
         keySizeCombo.removeAllItems();
 
@@ -202,6 +202,15 @@ public class MainFrame extends JFrame {
         } else if ("3DES".equals(selectedAlgorithm)) {
             keySizeCombo.addItem("112");
             keySizeCombo.addItem("168");
+        }
+
+        if ("Digital Signature".equals(selectedType)) {
+            if (digitalSignatureSignPanel != null) {
+                digitalSignatureSignPanel.updateAlgorithmOptions(selectedAlgorithm);
+            }
+            if (digitalSignatureVerifyPanel != null) {
+                digitalSignatureVerifyPanel.updateAlgorithmOptions(selectedAlgorithm);
+            }
         }
     }
 
@@ -227,13 +236,13 @@ public class MainFrame extends JFrame {
             }
         } else if ("Digital Signature".equals(selectedType)) {
             centerPanel.removeAll();
-            
+
             if ("Sign".equals(selectedMode)) {
                 centerPanel.add(digitalSignatureSignPanel, BorderLayout.CENTER);
             } else if ("Verify".equals(selectedMode)) {
                 centerPanel.add(digitalSignatureVerifyPanel, BorderLayout.CENTER);
             }
-            
+
             centerPanel.revalidate();
             centerPanel.repaint();
         }
@@ -242,11 +251,11 @@ public class MainFrame extends JFrame {
     public String getSelectedAlgorithm() {
         return (String) algorithmCombo.getSelectedItem();
     }
-    
+
     public String getSelectedMode() {
         return (String) modeCombo.getSelectedItem();
     }
-    
+
     public String getSelectedPadding() {
         String padding = (String) paddingCombo.getSelectedItem();
 
@@ -255,7 +264,7 @@ public class MainFrame extends JFrame {
         }
         return padding;
     }
-    
+
     public String getSelectedKeySize() {
         return (String) keySizeCombo.getSelectedItem();
     }

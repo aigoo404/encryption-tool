@@ -7,6 +7,8 @@ import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
 import model.digitalSignature;
+import model.DSAUtil;
+import controller.MainFrame;
 
 public class DigitalSignatureSignPanel extends JPanel {
 
@@ -17,7 +19,7 @@ public class DigitalSignatureSignPanel extends JPanel {
     private JButton signButton;
     private JButton saveToFileButton;
     private JButton embedToFileButton;
-    
+
     private JRadioButton alreadyHashedRadio;
     private JRadioButton notHashedRadio;
     private ButtonGroup hashGroup;
@@ -43,22 +45,22 @@ public class DigitalSignatureSignPanel extends JPanel {
         JPanel hashSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         hashSection.add(new JLabel("Is your file already hashed?"));
         alreadyHashedRadio = new JRadioButton("Yes, it's already hashed");
-        notHashedRadio = new JRadioButton("No, hash it for me (SHA256withRSA)", true);
-        
+        notHashedRadio = new JRadioButton("No, hash it for me", true);
+
         hashGroup = new ButtonGroup();
         hashGroup.add(alreadyHashedRadio);
         hashGroup.add(notHashedRadio);
-        
+
         hashSection.add(alreadyHashedRadio);
         hashSection.add(notHashedRadio);
-        
+
         JPanel signSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         signSection.add(new JLabel("Next, choose what you want to sign:"));
         chooseFileButton = new JButton("Choose file");
         chooseFileButton.setBackground(new Color(230, 230, 230));
         chooseFileButton.setForeground(Color.BLACK);
         signSection.add(chooseFileButton);
-        
+
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(hashSection, BorderLayout.NORTH);
         centerPanel.add(signSection, BorderLayout.CENTER);
@@ -76,7 +78,7 @@ public class DigitalSignatureSignPanel extends JPanel {
 
         JPanel outputSection = new JPanel(new BorderLayout(5, 5));
         outputSection.setBorder(new EmptyBorder(10, 0, 0, 0));
-        
+
         JLabel signatureLabel = new JLabel("Here is your signature:");
         outputSection.add(signatureLabel, BorderLayout.NORTH);
 
@@ -93,21 +95,21 @@ public class DigitalSignatureSignPanel extends JPanel {
         JPanel bottomActionSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         bottomActionSection.setBorder(new EmptyBorder(10, 0, 0, 0));
         bottomActionSection.add(new JLabel("Choose your next action:"));
-        
+
         saveToFileButton = new JButton("Save it to a file");
         saveToFileButton.setBackground(new Color(230, 230, 230));
         saveToFileButton.setForeground(Color.BLACK);
         bottomActionSection.add(saveToFileButton);
-        
+
         bottomActionSection.add(new JLabel(", or"));
-        
+
         embedToFileButton = new JButton("Embed it to the file");
         embedToFileButton.setBackground(new Color(230, 230, 230));
         embedToFileButton.setForeground(Color.BLACK);
         bottomActionSection.add(embedToFileButton);
-        
+
         outputSection.add(bottomActionSection, BorderLayout.SOUTH);
-        
+
         add(outputSection, BorderLayout.CENTER);
 
         privateKeyField = createPlaceholderTextArea(PRIVATE_KEY_PLACEHOLDER);
@@ -119,6 +121,17 @@ public class DigitalSignatureSignPanel extends JPanel {
         embedToFileButton.addActionListener(e -> embedSignatureToFile());
     }
 
+    public void updateAlgorithmOptions(String algorithm) {
+        if ("DSA".equals(algorithm)) {
+            alreadyHashedRadio.setEnabled(false);
+            notHashedRadio.setSelected(true);
+            alreadyHashedRadio.setToolTipText("DSA doesn't support raw hash signing");
+        } else {
+            alreadyHashedRadio.setEnabled(true);
+            alreadyHashedRadio.setToolTipText(null);
+        }
+    }
+
     private void signData() {
         try {
             String privateKeyText = privateKeyField.getText().trim();
@@ -127,17 +140,27 @@ public class DigitalSignatureSignPanel extends JPanel {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-    
+
             if (selectedFile == null) {
                 JOptionPane.showMessageDialog(this, "Please select a file to sign.", "Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-    
+
+            MainFrame mainFrame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            String selectedAlgorithm = mainFrame.getSelectedAlgorithm();
+
             boolean isAlreadyHashed = alreadyHashedRadio.isSelected();
-            String signature = digitalSignature.signFile(selectedFile.getAbsolutePath(), privateKeyText, isAlreadyHashed);
+            String signature;
+
+            if ("DSA".equals(selectedAlgorithm)) {
+                signature = DSAUtil.signFile(selectedFile.getAbsolutePath(), privateKeyText);
+            } else {
+                signature = digitalSignature.signFile(selectedFile.getAbsolutePath(), privateKeyText, isAlreadyHashed);
+            }
+
             signatureOutputArea.setText(signature);
-    
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Signing failed: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
@@ -251,22 +274,25 @@ public class DigitalSignatureSignPanel extends JPanel {
         try {
             String originalPath = selectedFile.getAbsolutePath();
             String signedFilePath;
-            
+
             int lastDotIndex = originalPath.lastIndexOf('.');
             if (lastDotIndex > 0) {
-                signedFilePath = originalPath.substring(0, lastDotIndex) + ".signed" + originalPath.substring(lastDotIndex);
+                signedFilePath = originalPath.substring(0, lastDotIndex) + ".signed"
+                        + originalPath.substring(lastDotIndex);
             } else {
                 signedFilePath = originalPath + ".signed";
             }
-            
+
             byte[] originalContent = java.nio.file.Files.readAllBytes(selectedFile.toPath());
             String embeddedContent = new String(originalContent) + "\n\n--- DIGITAL SIGNATURE ---\n" + signature
                     + "\n--- END SIGNATURE ---";
-    
+
             java.nio.file.Files.write(java.nio.file.Paths.get(signedFilePath), embeddedContent.getBytes());
-    
+
             JOptionPane.showMessageDialog(this,
-                    "Signature embedded successfully into new file: " + signedFilePath + "\n\nOriginal file remains unchanged for verification.", "Success",
+                    "Signature embedded successfully into new file: " + signedFilePath
+                            + "\n\nOriginal file remains unchanged for verification.",
+                    "Success",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Failed to embed signature: " + e.getMessage(), "Error",

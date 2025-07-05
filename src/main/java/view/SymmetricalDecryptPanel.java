@@ -1,5 +1,8 @@
 package view;
 
+import model.AESUtil;
+import model.DESUtil;
+import model.threeDESUtil;
 import controller.MainFrame;
 import javax.swing.*;
 import java.awt.*;
@@ -7,7 +10,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
-import model.AESUtil;
 
 public class SymmetricalDecryptPanel extends JPanel {
 
@@ -218,7 +220,18 @@ public class SymmetricalDecryptPanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             try {
-                String loadedIV = AESUtil.loadIV(selectedFile.getAbsolutePath());
+                String loadedIV;
+                MainFrame mainFrame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+                String algorithm = mainFrame.getSelectedAlgorithm();
+
+                if ("DES".equals(algorithm)) {
+                    loadedIV = DESUtil.loadIV(selectedFile.getAbsolutePath());
+                } else if ("DESede".equals(algorithm) || "3DES".equals(algorithm)) {
+                    loadedIV = threeDESUtil.loadIV(selectedFile.getAbsolutePath());
+                } else {
+                    loadedIV = AESUtil.loadIV(selectedFile.getAbsolutePath());
+                }
+
                 ivField.setText(loadedIV);
                 ivField.setForeground(Color.BLACK);
                 System.out.println("IV loaded successfully from: " + selectedFile.getAbsolutePath());
@@ -238,7 +251,18 @@ public class SymmetricalDecryptPanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             try {
-                String loadedKey = AESUtil.loadKey(selectedFile.getAbsolutePath());
+                String loadedKey;
+                MainFrame mainFrame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+                String algorithm = mainFrame.getSelectedAlgorithm();
+
+                if ("DES".equals(algorithm)) {
+                    loadedKey = DESUtil.loadKey(selectedFile.getAbsolutePath());
+                } else if ("DESede".equals(algorithm) || "3DES".equals(algorithm)) {
+                    loadedKey = threeDESUtil.loadKey(selectedFile.getAbsolutePath());
+                } else {
+                    loadedKey = AESUtil.loadKey(selectedFile.getAbsolutePath());
+                }
+
                 secretKeyField.setText(loadedKey);
                 secretKeyField.setForeground(Color.BLACK);
                 System.out.println("Secret key loaded successfully from: " + selectedFile.getAbsolutePath());
@@ -288,8 +312,16 @@ public class SymmetricalDecryptPanel extends JPanel {
                             JOptionPane.WARNING_MESSAGE);
 
                     if (confirm == JOptionPane.YES_OPTION) {
-                        AESUtil.decryptFileInPlace(selectedFile.getAbsolutePath(),
-                                secretKey, algorithm, mode, padding, requiresIV ? iv : null);
+                        if ("DES".equals(algorithm)) {
+                            DESUtil.decryptFileInPlace(selectedFile.getAbsolutePath(),
+                                    secretKey, algorithm, mode, padding, requiresIV ? iv : null);
+                        } else if ("DESede".equals(algorithm) || "3DES".equals(algorithm)) {
+                            threeDESUtil.decryptFileInPlace(selectedFile.getAbsolutePath(),
+                                    secretKey, algorithm, mode, padding, requiresIV ? iv : null);
+                        } else {
+                            AESUtil.decryptFileInPlace(selectedFile.getAbsolutePath(),
+                                    secretKey, algorithm, mode, padding, requiresIV ? iv : null);
+                        }
 
                         JOptionPane.showMessageDialog(this,
                                 "File decrypted successfully in-place: " + selectedFile.getAbsolutePath(),
@@ -304,8 +336,17 @@ public class SymmetricalDecryptPanel extends JPanel {
                     return;
                 }
 
-                String decryptedText = AESUtil.decrypt(text, secretKey, algorithm, mode, padding,
-                        requiresIV ? iv : null);
+                String decryptedText;
+                if ("DES".equals(algorithm)) {
+                    decryptedText = DESUtil.decrypt(text, secretKey, algorithm, mode, padding,
+                            requiresIV ? iv : null);
+                } else if ("DESede".equals(algorithm) || "3DES".equals(algorithm)) {
+                    decryptedText = threeDESUtil.decrypt(text, secretKey, algorithm, mode, padding,
+                            requiresIV ? iv : null);
+                } else {
+                    decryptedText = AESUtil.decrypt(text, secretKey, algorithm, mode, padding,
+                            requiresIV ? iv : null);
+                }
 
                 JTextArea resultArea = new JTextArea(10, 50);
                 resultArea.setText("Decrypted Text:\n" + decryptedText);

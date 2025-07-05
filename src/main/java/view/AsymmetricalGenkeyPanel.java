@@ -186,7 +186,6 @@ public class AsymmetricalGenkeyPanel extends JPanel {
                 String keySizeStr = (String) keySizeCombo.getSelectedItem();
                 keySize = Integer.parseInt(keySizeStr);
             } else {
-                // Get key size from MainFrame when combo box is not available
                 Container parent = this.getParent();
                 while (parent != null && !(parent instanceof MainFrame)) {
                     parent = parent.getParent();
@@ -213,7 +212,7 @@ public class AsymmetricalGenkeyPanel extends JPanel {
             
             String message = "RSA key pair generated successfully!";
             if (keySizeCombo == null) {
-                message += "\nUsed default key size: " + keySize + " bits";
+                message += "\nWith key size " + keySize + " bits";
             }
             JOptionPane.showMessageDialog(this, message, "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {

@@ -15,11 +15,11 @@ public class AsymmetricalEncryptPanel extends JPanel {
     private JRadioButton encryptTextRadio;
     private JButton chooseFileButton;
     private JTextArea textInputArea;
-    private JTextArea outputField; 
+    private JTextArea outputField;
     private JButton loadPublicKeyButton;
     private JTextArea publicKeyField;
     private JButton encryptButton;
-    
+
     private File selectedFile;
 
     private static final String TEXT_PLACEHOLDER = "Your text here...";
@@ -170,7 +170,8 @@ public class AsymmetricalEncryptPanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             selectedFile = fileChooser.getSelectedFile();
             chooseFileButton.setText(selectedFile.getName());
-            JOptionPane.showMessageDialog(this, "File selected: " + selectedFile.getName(), "File Selected", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "File selected: " + selectedFile.getName(), "File Selected",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -185,9 +186,11 @@ public class AsymmetricalEncryptPanel extends JPanel {
                 String publicKeyBase64 = RSAUtil.keyToBase64(publicKey);
                 publicKeyField.setText(publicKeyBase64);
                 publicKeyField.setForeground(Color.BLACK);
-                JOptionPane.showMessageDialog(this, "Public key loaded successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Public key loaded successfully!", "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error loading public key: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error loading public key: " + ex.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
             }
         }
@@ -197,22 +200,24 @@ public class AsymmetricalEncryptPanel extends JPanel {
         try {
             String publicKeyText = publicKeyField.getText().trim();
             if (publicKeyText.isEmpty() || publicKeyText.equals(PUBLIC_KEY_PLACEHOLDER)) {
-                JOptionPane.showMessageDialog(this, "Please load or enter a public key first.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please load or enter a public key first.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             if (encryptFileRadio.isSelected()) {
                 if (selectedFile == null) {
-                    JOptionPane.showMessageDialog(this, "Please select a file to encrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Please select a file to encrypt.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
-                int result = JOptionPane.showConfirmDialog(this, 
-                    "The original file will be overwritten.\nDo you want to continue?", 
-                    "Confirm Encryption", 
-                    JOptionPane.YES_NO_OPTION, 
-                    JOptionPane.WARNING_MESSAGE);
-                
+
+                int result = JOptionPane.showConfirmDialog(this,
+                        "The original file will be overwritten.\nDo you want to continue?",
+                        "Confirm Encryption",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+
                 if (result == JOptionPane.YES_OPTION) {
                     RSAUtil.encryptFileInPlace(selectedFile.getAbsolutePath(), publicKeyText);
                     outputField.setText("File encrypted successfully in place: " + selectedFile.getAbsolutePath());
@@ -220,15 +225,17 @@ public class AsymmetricalEncryptPanel extends JPanel {
             } else if (encryptTextRadio.isSelected()) {
                 String inputText = textInputArea.getText().trim();
                 if (inputText.isEmpty() || inputText.equals(TEXT_PLACEHOLDER)) {
-                    JOptionPane.showMessageDialog(this, "Please enter text to encrypt.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Please enter text to encrypt.", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
+
                 String encryptedText = RSAUtil.encrypt(inputText, publicKeyText);
                 outputField.setText(encryptedText);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Encryption failed: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Encryption failed: " + e.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
             outputField.setText("Encryption failed: " + e.getMessage());
         }
     }

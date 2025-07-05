@@ -7,6 +7,8 @@ import java.awt.event.FocusListener;
 import javax.swing.border.EmptyBorder;
 import java.io.File;
 import model.digitalSignature;
+import model.DSAUtil;
+import controller.MainFrame;
 
 public class DigitalSignatureVerifyPanel extends JPanel {
 
@@ -17,7 +19,7 @@ public class DigitalSignatureVerifyPanel extends JPanel {
     private JTextArea signatureInputArea;
     private JTextArea verificationResultArea;
     private JButton verifyButton;
-    
+
     private JRadioButton alreadyHashedRadio;
     private JRadioButton notHashedRadio;
     private ButtonGroup hashGroup;
@@ -44,14 +46,14 @@ public class DigitalSignatureVerifyPanel extends JPanel {
 
         JPanel hashSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         hashSection.add(new JLabel("Is your file already hashed?"));
-        
+
         alreadyHashedRadio = new JRadioButton("Yes, it's already hashed");
-        notHashedRadio = new JRadioButton("No, hash it for me (SHA256withRSA)", true); // DEFAULT selected
-        
+        notHashedRadio = new JRadioButton("No, hash it for me", true);
+
         hashGroup = new ButtonGroup();
         hashGroup.add(alreadyHashedRadio);
         hashGroup.add(notHashedRadio);
-        
+
         hashSection.add(alreadyHashedRadio);
         hashSection.add(notHashedRadio);
 
@@ -72,7 +74,7 @@ public class DigitalSignatureVerifyPanel extends JPanel {
         loadSignatureButton.setForeground(Color.BLACK);
         sigPanel.add(loadSignatureButton);
         signSection.add(sigPanel);
-        
+
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(hashSection, BorderLayout.NORTH);
         centerPanel.add(signSection, BorderLayout.CENTER);
@@ -115,6 +117,17 @@ public class DigitalSignatureVerifyPanel extends JPanel {
         verifyButton.addActionListener(e -> verifySignature());
     }
 
+    public void updateAlgorithmOptions(String algorithm) {
+        if ("DSA".equals(algorithm)) {
+            alreadyHashedRadio.setEnabled(false);
+            notHashedRadio.setSelected(true);
+            alreadyHashedRadio.setToolTipText("DSA doesn't support raw hash verification");
+        } else {
+            alreadyHashedRadio.setEnabled(true);
+            alreadyHashedRadio.setToolTipText(null);
+        }
+    }
+
     private void verifySignature() {
         try {
             String publicKeyText = publicKeyField.getText().trim();
@@ -123,38 +136,45 @@ public class DigitalSignatureVerifyPanel extends JPanel {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-    
+
             if (selectedFile == null) {
                 JOptionPane.showMessageDialog(this, "Please select a file to verify.", "Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-    
+
             if (loadedSignature == null || loadedSignature.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please load a signature to verify.", "Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-    
+
+            MainFrame mainFrame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            String selectedAlgorithm = mainFrame.getSelectedAlgorithm();
+
             boolean isAlreadyHashed = alreadyHashedRadio.isSelected();
-            boolean isValid = digitalSignature.verifyFile(selectedFile.getAbsolutePath(), loadedSignature,
-                    publicKeyText, isAlreadyHashed);
-    
-            if (isValid) {
-                verificationResultArea.setText(
-                        "✓ SIGNATURE VALID\n\nThe signature is authentic and the file has not been tampered with.");
-                verificationResultArea.setForeground(new Color(0, 128, 0)); // Green
+            boolean isValid;
+
+            if ("DSA".equals(selectedAlgorithm)) {
+                isValid = DSAUtil.verifyFile(selectedFile.getAbsolutePath(), loadedSignature, publicKeyText);
             } else {
-                verificationResultArea.setText(
-                        "✗ SIGNATURE INVALID\n\nThe signature is not valid. The file may have been modified or the signature is incorrect.");
-                verificationResultArea.setForeground(new Color(200, 0, 0)); // Red
+                isValid = digitalSignature.verifyFile(selectedFile.getAbsolutePath(), loadedSignature, publicKeyText,
+                        isAlreadyHashed);
             }
-    
+
+            if (isValid) {
+                verificationResultArea.setText("✓ Signature is VALID");
+                verificationResultArea.setForeground(new Color(0, 128, 0));
+            } else {
+                verificationResultArea.setText("✗ Signature is INVALID");
+                verificationResultArea.setForeground(Color.RED);
+            }
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Verification failed: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
             verificationResultArea.setText("Verification failed: " + e.getMessage());
-            verificationResultArea.setForeground(new Color(200, 0, 0)); // Red
+            verificationResultArea.setForeground(Color.RED);
         }
     }
 
